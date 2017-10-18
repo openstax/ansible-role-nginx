@@ -1,0 +1,21 @@
+---
+- name: nginx reload
+  become: yes
+  service:
+    name: nginx.service
+    enabled: yes
+    state: reloaded
+  tags:
+    - nginx-reload
+  listen: reload nginx
+
+- name: nginx restart
+  become: yes
+  service:
+     name: nginx.service
+     enabled: yes
+     state: restarted
+  tags:
+    - nginx-restart
+  listen:
+    - restart nginx

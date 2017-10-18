@@ -1,0 +1,68 @@
+---
+- name: install nginx from apt
+  become: yes
+  apt:
+    update_cache: no
+    name: nginx
+  tags:
+    - setup
+    - nginx-setup
+
+- name: ensure /etc/nginx/etc exists
+  become: yes
+  file:
+    path: "{{ nginx_etc }}"
+    state: directory
+    owner: root
+    group: root
+  when:
+    - allow_from is defined
+
+- name: create whitelist file
+  become: yes
+  template:
+    src: trustedips.conf
+    dest: "{{ nginx_etc }}/trustedips.conf"
+  tags:
+    - nginx-setup
+    - nginx-whitelist
+  when:
+    - allowed_from is defined
+  notify:
+    - reload nginx
+
+- name: create sites-available dir
+  become: yes
+  file:
+    path: "{{ nginx_available }}"
+    state: directory
+
+- name: create sites-enabled dir
+  become: yes
+  file: 
+    path: "{{ nginx_enabled }}"
+    state: directory
+  tags:
+    - nginx-setup
+    - nginx-sites
+
+- name: create sites-available file
+  become: yes
+  template:
+    src: etc/nginx/sites-available/site-available.conf
+    dest: "/etc/nginx/sites-available/{{ item.name }}.conf"
+  with_items: "{{ nginx.sites }}"
+  when: "'sites' in nginx"
+  tags:
+    - nginx-setup
+    - nginx-sites
+
+- name: enable sites-available file
+  become: yes
+  file:
+    state: link
+    src: "{{ nginx_available }}/{{ item.name }}.conf"
+    dest: "{{ nginx_enabled }}/{{ item.name }}.conf"
+  with_items: "{{ nginx.sites }}"
+  when: "'sites' in nginx"
+  notify: restart nginx

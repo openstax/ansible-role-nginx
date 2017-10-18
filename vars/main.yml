@@ -1,0 +1,5 @@
+---
+nginx_base_dir: /etc/nginx
+nginx_etc: "{{ nginx_base_dir }}/etc"
+nginx_available: "{{ nginx_base_dir }}/sites-available"
+nginx_enabled: "{{ nginx_base_dir }}/sites-enabled"
