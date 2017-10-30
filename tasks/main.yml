@@ -18,6 +18,17 @@
   when:
     - allow_from is defined
 
+- name: replace the default nginx config
+  become: yes
+  template:
+      src: etc/nginx/nginx.conf
+      dest: /etc/nginx/nginx.conf
+  tags:
+    - nginx-setup
+    - nginx-config
+  notify:
+    - reload nginx
+
 - name: create whitelist file
   become: yes
   template:
@@ -45,24 +56,3 @@
   tags:
     - nginx-setup
     - nginx-sites
-
-- name: create sites-available file
-  become: yes
-  template:
-    src: etc/nginx/sites-available/site-available.conf
-    dest: "/etc/nginx/sites-available/{{ item.name }}.conf"
-  with_items: "{{ nginx.sites }}"
-  when: "'sites' in nginx"
-  tags:
-    - nginx-setup
-    - nginx-sites
-
-- name: enable sites-available file
-  become: yes
-  file:
-    state: link
-    src: "{{ nginx_available }}/{{ item.name }}.conf"
-    dest: "{{ nginx_enabled }}/{{ item.name }}.conf"
-  with_items: "{{ nginx.sites }}"
-  when: "'sites' in nginx"
-  notify: restart nginx
