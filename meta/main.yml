@@ -2,14 +2,6 @@ galaxy_info:
   author: openstax
   description: The nginx role
   company: openstax
-   
-  # Some suggested licenses:
-  # - BSD (default)
-  # - MIT
-  # - GPLv2
-  # - GPLv3
-  # - Apache
-  # - CC-BY
   license: GPLv2
   min_ansible_version: 2.1
   github_branch: master
