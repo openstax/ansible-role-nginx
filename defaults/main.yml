@@ -1,2 +1,4 @@
 ---
-# defaults file for nginx
+nginx_vhost_path: /etc/nginx/sites-enabled
+nginx_vhost_template: etc/nginx/sites-enabled/vhost.conf.j2
+nginx_default_vhost_path: /etc/nginx/sites-enabled

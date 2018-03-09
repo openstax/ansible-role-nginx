@@ -1,6 +1,5 @@
 ---
 - name: install nginx from apt
-  become: yes
   apt:
     update_cache: no
     name: nginx
@@ -9,7 +8,6 @@
     - nginx-setup
 
 - name: ensure /etc/nginx/etc exists
-  become: yes
   file:
     path: "{{ nginx_etc }}"
     state: directory
@@ -18,8 +16,17 @@
   when:
     - allow_from is defined
 
+- name: create sites-enabled dir
+  file:
+    path: "{{ nginx_enabled }}"
+    state: directory
+    owner: root
+    group: root
+  tags:
+    - nginx-setup
+    - nginx-sites
+
 - name: replace the default nginx config
-  become: yes
   template:
       src: etc/nginx/nginx.conf
       dest: /etc/nginx/nginx.conf
@@ -29,30 +36,39 @@
   notify:
     - reload nginx
 
-- name: create whitelist file
-  become: yes
-  template:
-    src: trustedips.conf
-    dest: "{{ nginx_etc }}/trustedips.conf"
-  tags:
-    - nginx-setup
-    - nginx-whitelist
-  when:
-    - allowed_from is defined
-  notify:
-    - reload nginx
+- name: Remove default nginx vhost config file (if configured).
+  file:
+    path: "{{ nginx_default_vhost_path }}/default.conf"
+    state: absent
+  when: nginx_remove_default_vhost
+  notify: restart nginx
 
 - name: create sites-available dir
-  become: yes
   file:
     path: "{{ nginx_available }}"
     state: directory
+    owner: root
+    group: root
+  notify: restart nginx
 
-- name: create sites-enabled dir
-  become: yes
-  file: 
-    path: "{{ nginx_enabled }}"
-    state: directory
-  tags:
-    - nginx-setup
-    - nginx-sites
+- name: Add managed vhost config files.
+  template:
+    src: "{{ item.template|default(nginx_vhost_template) }}"
+    dest: "{{ nginx_vhost_path }}/{{ item.filename|default(item.server_name.split(' ')[0] ~ '.conf') }}"
+    force: yes
+    owner: root
+    group: root
+    mode: 0644
+  when: item.state|default('present') != 'absent'
+  with_items: "{{ nginx_vhosts }}"
+  notify: reload nginx
+
+- name: Remove managed vhost config files.
+  file:
+    path: "{{ nginx_vhost_path }}/{{ item.filename|default(item.server_name.split(' ')[0] ~ '.conf') }}"
+    state: absent
+  when: item.state|default('present') == 'absent'
+  with_items: "{{ nginx_vhosts }}"
+  notify: reload nginx
+
+
